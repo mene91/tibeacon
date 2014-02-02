@@ -1,6 +1,6 @@
-Usage:
-------
+#Usage:
 
+```
 var iBeacon = require('miga.tibeacon');
 iBeacon.initBeacon({
     success : onSuccess
@@ -8,9 +8,14 @@ iBeacon.initBeacon({
 
 function onSuccess(e){
   Ti.API.info(JSON.stringify(e));
-}
+}  
 
 iBeacon.startScanning();
 iBeacon.stopScanning();
+```
 
+
+#Binary:
+
+inside dist folder
 
