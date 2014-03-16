@@ -1,4 +1,4 @@
-package miga.Tibeacon;
+package miga.tibeacon;
 
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.annotations.Kroll;
@@ -21,7 +21,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothAdapter;
 import android.widget.BaseAdapter;
 
-@Kroll.module(name="Tibecon", id="miga.tibeacon")
+@Kroll.module(name="Tibeacon", id="miga.tibeacon")
 public class TibeaconModule extends KrollModule {
 	
 	Context context;
