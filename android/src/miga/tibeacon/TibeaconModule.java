@@ -213,6 +213,9 @@ public class TibeaconModule extends KrollModule {
             mLeDevices.clear();
             rssi.clear();
             accuracy.clear();
+            power.clear();
+            major.clear();
+            minor.clear();
         }
 
         @Override
