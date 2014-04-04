@@ -9,32 +9,33 @@ import org.appcelerator.kroll.common.Log;
 import org.appcelerator.kroll.KrollDict;
 import android.content.Context;
 import android.app.Activity;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collection;
-import android.os.Bundle;
-import android.view.ViewGroup;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import android.view.View;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothDevice;
+
+import com.easibeacon.protocol.IBeacon;
+import com.easibeacon.protocol.IBeaconListener;
+import com.easibeacon.protocol.IBeaconProtocol;
+import com.easibeacon.protocol.Utils;
+
 import android.bluetooth.BluetoothAdapter;
-import android.widget.BaseAdapter;
+import android.content.Intent;
+import java.util.ArrayList;
+
 
 @Kroll.module(name="Tibeacon", id="miga.tibeacon")
-public class TibeaconModule extends KrollModule {
+public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	Context context;
 	Activity activity;
-	private BluetoothAdapter mBluetoothAdapter;
+	private IBeaconProtocol ibp;
+	int seconds=60;
+	public static final int REQUEST_BLUETOOTH_ENABLE = 1;	
 	KrollFunction success;
-	private LeDeviceListAdapter mLeDeviceListAdapter =new LeDeviceListAdapter();
-	
 	
        @Override
         public void onDestroy(Activity activity) {
 	  Log.d("BEACON","destroy---------------------");
-	  stopScanning();
 	  super.onDestroy(activity);
         }
         
@@ -42,7 +43,6 @@ public class TibeaconModule extends KrollModule {
         public void onResume(Activity activity) {
          super.onResume(activity);
 	  Log.d("BEACON","resume---------------------");
-	  startScanning();
         }
         
        
@@ -57,229 +57,131 @@ public class TibeaconModule extends KrollModule {
 		TiApplication appContext = TiApplication.getInstance();
 		activity = appContext.getCurrentActivity();
 		context=activity.getApplicationContext();
+		
 	}
 	
 	
-	public void sendData(){
-	  HashMap<String, KrollDict[]> event = new HashMap<String, KrollDict[]>();
-	  KrollDict[] dList = new KrollDict[mLeDeviceListAdapter.getCount()];
-	  
-	  for (int i=0; i<mLeDeviceListAdapter.getCount();++i){
-	    KrollDict d = new KrollDict();
-	    
-	    ReturnSet ret = (ReturnSet)mLeDeviceListAdapter.getItem(i);
-	    BluetoothDevice device = ret.getDevice();
-	    
-	    d.put("name",device.getName());
-	    d.put("address",device.getAddress());
-	    d.put("rssi",ret.getRssi());
-	    d.put("major",ret.getMajor());
-	    d.put("minor",ret.getMinor());
-	    d.put("power",ret.getPower());
-	    d.put("accuracy",ret.getAccuracy());
-	    dList[i]=d;
-	  }
-	  event.put("device", dList);
-	 
-	  // Success-Callback
-	  success.call(getKrollObject(), event);
-	  
-	}
-	
-	private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
-	    @Override
-	    public void onLeScan(final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
-	      activity.runOnUiThread(new Runnable() {
-		  @Override
-		  public void run() {
-		      Log.d("BEACON", "found name: " + device.getName() +  " address: " + device.getAddress() + " rssi: " + rssi);
-		      int major = 0;
-		      int minor = 0;
-		      int power = 0;
-		      
-		      int startByte = 2;
-		      boolean patternFound = false;
-		      
-		      while (startByte <= 5) {
-			      if (((int)scanRecord[startByte] & 0xff) == 0x4c &&
-				      ((int)scanRecord[startByte+1] & 0xff) == 0x00 &&
-				      ((int)scanRecord[startByte+2] & 0xff) == 0x02 &&
-				      ((int)scanRecord[startByte+3] & 0xff) == 0x15) {                        
-				      patternFound = true;
-				      Log.d("BEACON", "found ibeacon");
-				      break;
-			      } else if (((int)scanRecord[startByte] & 0xff) == 0x2d &&
-					      ((int)scanRecord[startByte+1] & 0xff) == 0x24 &&
-					      ((int)scanRecord[startByte+2] & 0xff) == 0xbf &&
-					      ((int)scanRecord[startByte+3] & 0xff) == 0x16) {        
-				      Log.d("BEACON", "estimote");
-			      }                                        
-			      startByte++;
-		      }
-		      
-		      if (patternFound == false) {
-			Log.d("BEACON","no ibeacon found");
-		      } else {
-		    
-			power = (int)scanRecord[startByte+24];
-			major = (scanRecord[startByte+20] & 0xff) * 0x100 + (scanRecord[startByte+21] & 0xff);
-			minor = (scanRecord[startByte+22] & 0xff) * 0x100 + (scanRecord[startByte+23] & 0xff);
-			
-		      }	      
-
-	      
-		      double ratio = rssi*1.0/power;
-		      double accuracy = 0;
-		      if (ratio < 1.0) {
-			      accuracy = Math.pow(ratio,10);
-		      }  else {
-			      accuracy = (0.89976)*Math.pow(ratio,7.7095) + 0.111;
-		      }
-		      
-		      mLeDeviceListAdapter.addDevice(device, rssi,accuracy,minor,major,power);
-		      mLeDeviceListAdapter.notifyDataSetChanged();
-	      
-		      sendData();
-	      
-		      
-		  }
-	      });
-	  }
-	};
-	
-	
-	@Kroll.method
-	public void stopScanning(){
-	  mBluetoothAdapter.stopLeScan(mLeScanCallback);
-	  
-	}
-	
-	@Kroll.method
-	public void startScanning(){
-	  mLeDeviceListAdapter.clear();
-	  mBluetoothAdapter.startLeScan(mLeScanCallback);
+	@Override
+	public void operationError(int status) {
+		Log.i("BEACON", "Bluetooth error: " + status);	
 	}
 	
 	@Kroll.method
 	public void initBeacon(HashMap args){
-	  
-	  Log.d("BEACON","init");
 	  KrollDict arg = new KrollDict(args);
 	  success =(KrollFunction) arg.get("success");
-	  
-	  BluetoothManager manager = (BluetoothManager) context.getSystemService(context.BLUETOOTH_SERVICE);
-	  mBluetoothAdapter = manager.getAdapter();
-	  startScanning();
+	  seconds=arg.optInt("interval",60);
+	  ibp = IBeaconProtocol.getInstance(activity);
+	  ibp.setListener(this);
+	}
+
+	
+	@Override
+	public void searchState(final int state) {
+		activity.runOnUiThread(new Runnable() {			
+			@Override
+			public void run() {
+				if(state == IBeaconProtocol.SEARCH_STARTED){
+					Log.i("BEACON","started scanning");
+				}else if (state == IBeaconProtocol.SEARCH_END_SUCCESS){
+					sendData();
+					Log.i("BEACON","scan end success");
+				}else if (state == IBeaconProtocol.SEARCH_END_EMPTY){
+					Log.i("BEACON","search end empty");
+				}
+			}
+		});
+	}
+	
+	@Override
+	public void beaconFound(IBeacon ibeacon) {
+		Log.i("BEACON","iBeacon found: " + ibeacon.toString());
+	}
+	
+	@Override
+	public void exitRegion(IBeacon ibeacon) {
+		activity.runOnUiThread(new Runnable() {		
+			@Override
+			public void run() {
+			}
+		});
+	}
+	
+	@Override
+	public void enterRegion(IBeacon ibeacon) {
+		Log.i("BEACON","Enter region: " + ibeacon.toString());
+	}
+	
+	@Kroll.method
+	public void startScanning(){
+	 
+	    TimerTask searchIbeaconTask = new TimerTask() {	
+			@Override
+			public void run() {
+				activity.runOnUiThread(new Runnable() {					
+					@Override
+					public void run() {
+						scanBeacons();
+					}
+				});
+			}
+		};	
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(searchIbeaconTask, 1000, seconds*1000);
+	}
+	
+	@Kroll.method
+	public void stopScanning(){
+	  Log.i("BEACON","stop scanning");
+	  ibp = IBeaconProtocol.getInstance(activity);
+	  if(ibp.isScanning()) ibp.scanIBeacons(false);
 	}
 	
 	
+	private void scanBeacons(){
+		// Check Bluetooth every time
+		Log.i("BEACON","Scanning...");
+		ibp = IBeaconProtocol.getInstance(activity);
+		
+		// Filter based on default easiBeacon UUID, remove if not required
+		//ibp.setScanUUID(UUID);
+
+		if(!IBeaconProtocol.initializeBluetoothAdapter(activity)){
+			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			activity.startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH_ENABLE );
+		}else{
+			ibp.setListener(this);
+			if(ibp.isScanning())
+				ibp.scanIBeacons(false);
+			ibp.reset();
+			ibp.scanIBeacons(true);		
+		}		
+	}
 	
-	// Adapter for holding devices found through scanning.
-    private class LeDeviceListAdapter extends BaseAdapter {
-        private ArrayList<BluetoothDevice> mLeDevices;
-        private ArrayList<Integer> rssi;
-        private ArrayList<Double> accuracy;
-        private ArrayList<Integer> minor;
-        private ArrayList<Integer> major;
-        private ArrayList<Integer> power;
-        
-        public LeDeviceListAdapter() {
-            super();
-            mLeDevices = new ArrayList<BluetoothDevice>();
-            rssi = new ArrayList<Integer>();
-            major = new ArrayList<Integer>();
-            minor = new ArrayList<Integer>();
-            power = new ArrayList<Integer>();
-            accuracy= new ArrayList<Double>();
-            
-        }
-
-        public void addDevice(BluetoothDevice device, int r, double a, int mi,int ma,int p) {
-            if(!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
-                rssi.add(r);
-                accuracy.add(a);
-                minor.add(mi);
-                major.add(ma);
-                power.add(p);
-            }
-        }
-
-        public BluetoothDevice getDevice(int position) {
-            return mLeDevices.get(position);
-        }
-
-        public void clear() {
-            mLeDevices.clear();
-            rssi.clear();
-            accuracy.clear();
-            power.clear();
-            major.clear();
-            minor.clear();
-        }
-
-        @Override
-        public int getCount() {
-            return mLeDevices.size();
-        }
-
-       
-        
-        @Override
-        public Object getItem(int i) {
-            return new ReturnSet(mLeDevices.get(i),rssi.get(i),accuracy.get(i),minor.get(i),major.get(i),power.get(i));
-        }
-
-        @Override
-        public long getItemId(int i) {
-            return i;
-        }
-
-        @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
-            return view;
-        }
-    }
-
-	
-    public class ReturnSet {
-	    private BluetoothDevice device;
-	    private int rssi;
-	    private double accuracy;
-	    private int minor;
-	    private int major;
-	    private int power;
-	    public ReturnSet(BluetoothDevice d, int r, double a, int mi,int ma,int p) {
-		device = d;
-		rssi = r;
-		accuracy = a;
-		major = ma;
-		minor = mi;
-		power = p;
-	    }
+	public void sendData(){
+	  
+	  ArrayList<IBeacon> beacons = ibp.getIBeaconsByProximity();
+	  HashMap<String, KrollDict[]> event = new HashMap<String, KrollDict[]>();
+	  KrollDict[] dList = new KrollDict[beacons.size()]; 
+	 
+	  Log.i("BEACON","returning: "+beacons.size());
+	  for (int i=0; i<beacons.size();++i){
+	    KrollDict d = new KrollDict();
 	    
-	    public BluetoothDevice getDevice(){
-	      return device;
-	    }
+	    IBeacon beacon = beacons.get(i);
 	    
-	    public int getRssi(){
-	      return rssi;
-	    }
-	    public double getAccuracy(){
-	      return accuracy;
-	    }
-	    
-	    public int getMinor(){
-	      return minor;
-	    }
-	    
-	    public int getMajor(){
-	      return major;
-	    }
-	    
-	    public int getPower(){
-	      return power;
-	    }
+	    d.put("mac",beacon.getMacAddress());
+	    d.put("major",beacon.getMajor());
+	    d.put("minor",beacon.getMinor());
+	    d.put("power",beacon.getPowerValue());
+ 	    d.put("proximity",beacon.getProximity());
+ 	    d.put("uuid",beacon.getUuidHexString());
+	    dList[i]=d;
+	  }
+	  event.put("devices", dList);
+	 
+	  // Success-Callback
+	  success.call(getKrollObject(), event);
 	}
 	
 }
