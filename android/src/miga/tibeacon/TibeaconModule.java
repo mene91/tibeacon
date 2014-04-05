@@ -197,6 +197,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	    d.put("mac",beacon.getMacAddress());
 	    d.put("major",beacon.getMajor());
 	    d.put("minor",beacon.getMinor());
+	    d.put("rssi",beacon.getRssiValue());
 	    d.put("power",beacon.getPowerValue());
  	    d.put("proximity",beacon.getProximity());
  	    d.put("uuid",beacon.getUuidHexString());

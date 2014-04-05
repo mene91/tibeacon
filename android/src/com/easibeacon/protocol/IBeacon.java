@@ -65,6 +65,9 @@ public class IBeacon implements Serializable{
 	 */	
 	private double _proximity;
 
+	
+	private int _rssi;
+	
 	/**
 	 * The MAC address reported by the iBeacon
 	 */	
@@ -174,6 +177,14 @@ public class IBeacon implements Serializable{
 		this._powerValue = _pv;
 	}
 
+	public int getRssiValue() {
+		return _rssi;
+	}
+
+	public void setRssiValue(int _pv) {
+		this._rssi = _pv;
+	}
+	
 	public double getProximity() {
 		return _proximity;
 	}

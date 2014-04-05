@@ -207,6 +207,7 @@ public class IBeaconProtocol {
 		int minor = ((scanRecord[offset+2] << 8) & 0x0000ff00) | (scanRecord[offset+3] & 0x000000ff);
 		ibeacon.setMinor(minor);
 		ibeacon.setPowerValue(scanRecord[offset+4]);
+		ibeacon.setRssiValue(rssi);
 		ibeacon.setProximity((double)calculateDistance(ibeacon.getPowerValue(), rssi));
 		ibeacon.setMacAddress(device.getAddress());
 		
