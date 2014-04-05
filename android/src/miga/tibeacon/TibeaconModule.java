@@ -11,7 +11,7 @@ import android.content.Context;
 import android.app.Activity;
 import java.util.Timer;
 import java.util.TimerTask;
-
+import android.content.pm.PackageManager;
 
 import com.easibeacon.protocol.IBeacon;
 import com.easibeacon.protocol.IBeaconListener;
@@ -32,6 +32,9 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	int seconds=60;
 	public static final int REQUEST_BLUETOOTH_ENABLE = 1;	
 	KrollFunction success;
+	KrollFunction error;
+	Timer timer = new Timer();
+	boolean isRunning = false;
 	
        @Override
         public void onDestroy(Activity activity) {
@@ -68,11 +71,11 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	@Kroll.method
 	public void initBeacon(HashMap args){
-	  KrollDict arg = new KrollDict(args);
-	  success =(KrollFunction) arg.get("success");
-	  seconds=arg.optInt("interval",60);
-	  ibp = IBeaconProtocol.getInstance(activity);
-	  ibp.setListener(this);
+	    KrollDict arg = new KrollDict(args);
+	    success =(KrollFunction) arg.get("success");
+	    error =(KrollFunction) arg.get("error");
+	    seconds=arg.optInt("interval",60);
+	    
 	}
 
 	
@@ -114,7 +117,8 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	@Kroll.method
 	public void startScanning(){
-	 
+	    ibp = IBeaconProtocol.getInstance(activity);	    
+	    ibp.setListener(this);
 	    TimerTask searchIbeaconTask = new TimerTask() {	
 			@Override
 			public void run() {
@@ -126,20 +130,39 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 				});
 			}
 		};	
-		Timer timer = new Timer();
+		timer = new Timer();
 		timer.scheduleAtFixedRate(searchIbeaconTask, 1000, seconds*1000);
 	}
 	
 	@Kroll.method
 	public void stopScanning(){
 	  Log.i("BEACON","stop scanning");
-	  ibp = IBeaconProtocol.getInstance(activity);
-	  if(ibp.isScanning()) ibp.scanIBeacons(false);
+	  isRunning =false;
+	  timer.cancel();
 	}
 	
 	
+	@Kroll.method
+	public boolean isEnabled(){
+	/*
+	  BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+	  if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
+	    return false;
+	  }*/
+	
+	  ibp = IBeaconProtocol.getInstance(activity);
+	  return IBeaconProtocol.initializeBluetoothAdapter(activity);
+	}
+	
+	
+	@Kroll.method
+	public boolean isRunning(){
+	  return isRunning;
+	}
+	
 	private void scanBeacons(){
 		// Check Bluetooth every time
+		isRunning =true;
 		Log.i("BEACON","Scanning...");
 		ibp = IBeaconProtocol.getInstance(activity);
 		
@@ -149,7 +172,8 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 		if(!IBeaconProtocol.initializeBluetoothAdapter(activity)){
 			Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 			activity.startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH_ENABLE );
-		}else{
+			
+		} else{
 			ibp.setListener(this);
 			if(ibp.isScanning())
 				ibp.scanIBeacons(false);
