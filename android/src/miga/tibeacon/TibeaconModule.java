@@ -38,21 +38,21 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
        @Override
         public void onDestroy(Activity activity) {
-	  Log.d("BEACON","destroy---------------------");
+	  Log.d("BEACON","destroy");
 	  super.onDestroy(activity);
         }
         
        @Override
         public void onResume(Activity activity) {
          super.onResume(activity);
-	  Log.d("BEACON","resume---------------------");
+	  Log.d("BEACON","resume");
         }
         
        
        @Override
         public void onStart(Activity activity) {
 	  super.onStart(activity);
-	  Log.d("BEACON","start---------------------");
+	  Log.d("BEACON","start");
         }
 	
 	public TibeaconModule () {
@@ -91,6 +91,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 					Log.i("BEACON","scan end success");
 				}else if (state == IBeaconProtocol.SEARCH_END_EMPTY){
 					Log.i("BEACON","search end empty");
+					sendData();
 				}
 			}
 		});
