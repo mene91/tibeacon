@@ -34,6 +34,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	KrollFunction success;
 	KrollFunction region;
 	KrollFunction error;
+	KrollFunction found;
 	Timer timer = new Timer();
 	boolean isRunning = false;
 	
@@ -67,7 +68,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	@Override
 	public void operationError(int status) {
-		Log.i("BEACON", "Bluetooth error: " + status);	
+		Log.d("BEACON", "Bluetooth error: " + status);	
 	}
 	
 	@Kroll.method
@@ -76,7 +77,9 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	    success =(KrollFunction) arg.get("success");
 	    region=(KrollFunction) arg.get("region");
 	    error =(KrollFunction) arg.get("error");
+	    found =(KrollFunction) arg.get("found");
 	    seconds=arg.optInt("interval",60);
+	    
 	    
 	}
 
@@ -87,12 +90,12 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 			@Override
 			public void run() {
 				if(state == IBeaconProtocol.SEARCH_STARTED){
-					Log.i("BEACON","started scanning");
+					Log.d("BEACON","started scanning");
 				}else if (state == IBeaconProtocol.SEARCH_END_SUCCESS){
 					sendData();
-					Log.i("BEACON","scan end success");
+					Log.d("BEACON","scan end success");
 				}else if (state == IBeaconProtocol.SEARCH_END_EMPTY){
-					Log.i("BEACON","search end empty");
+					Log.d("BEACON","search end empty");
 					sendData();
 				}
 			}
@@ -101,7 +104,22 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	@Override
 	public void beaconFound(IBeacon ibeacon) {
-		Log.i("BEACON","iBeacon found: " + ibeacon.toString());
+		Log.d("BEACON","iBeacon found: " + ibeacon.toString());
+		
+		HashMap<String, KrollDict> event = new HashMap<String, KrollDict>();
+		KrollDict d = new KrollDict();;
+		d.put("mac",ibeacon.getMacAddress());
+		d.put("major",ibeacon.getMajor());
+		d.put("minor",ibeacon.getMinor());
+		d.put("rssi",ibeacon.getRssiValue());
+		d.put("power",ibeacon.getPowerValue());
+		d.put("proximity",ibeacon.getProximity());
+		d.put("uuid",ibeacon.getUuidHexString());
+		d.put("uuid-dashed",ibeacon.getUuidHexStringDashed());
+		event.put("device", d);
+	    
+	      // Success-Callback
+	      found.call(getKrollObject(), event);
 	}
 	
 	@Override
@@ -115,7 +133,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	@Override
 	public void enterRegion(IBeacon ibeacon) {
-		Log.i("BEACON","Enter region: " + ibeacon.toString());
+		Log.d("BEACON","Enter region: " + ibeacon.toString());
 
 		HashMap<String, KrollDict> event = new HashMap<String, KrollDict>();
 		KrollDict d = new KrollDict();;
@@ -126,6 +144,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 		d.put("power",ibeacon.getPowerValue());
 		d.put("proximity",ibeacon.getProximity());
 		d.put("uuid",ibeacon.getUuidHexString());
+		d.put("uuid-dashed",ibeacon.getUuidHexStringDashed());
 		event.put("device", d);
 	    
 	      // Success-Callback
@@ -154,7 +173,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	
 	@Kroll.method
 	public void stopScanning(){
-	  Log.i("BEACON","stop scanning");
+	  Log.d("BEACON","stop scanning");
 	  isRunning =false;
 	  timer.cancel();
 	}
@@ -181,7 +200,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	private void scanBeacons(){
 		// Check Bluetooth every time
 		isRunning =true;
-		Log.i("BEACON","Scanning...");
+		Log.d("BEACON","Scanning...");
 		ibp = IBeaconProtocol.getInstance(activity);
 		
 		// Filter based on default easiBeacon UUID, remove if not required
@@ -206,7 +225,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	  HashMap<String, KrollDict[]> event = new HashMap<String, KrollDict[]>();
 	  KrollDict[] dList = new KrollDict[beacons.size()]; 
 	 
-	  Log.i("BEACON","returning: "+beacons.size());
+	  Log.d("BEACON","returning: "+beacons.size());
 	  for (int i=0; i<beacons.size();++i){
 	    KrollDict d = new KrollDict();
 	    
@@ -219,6 +238,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	    d.put("power",beacon.getPowerValue());
  	    d.put("proximity",beacon.getProximity());
  	    d.put("uuid",beacon.getUuidHexString());
+ 	    d.put("uuid-dashed",beacon.getUuidHexStringDashed());
 	    dList[i]=d;
 	  }
 	  event.put("devices", dList);
