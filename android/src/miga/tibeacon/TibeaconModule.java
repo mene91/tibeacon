@@ -115,7 +115,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 		d.put("power",ibeacon.getPowerValue());
 		d.put("proximity",ibeacon.getProximity());
 		d.put("uuid",ibeacon.getUuidHexString());
-		d.put("uuid-dashed",ibeacon.getUuidHexStringDashed());
+		d.put("uuidDashed",ibeacon.getUuidHexStringDashed());
 		event.put("device", d);
 	    
 	      // Success-Callback
@@ -146,7 +146,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 		d.put("power",ibeacon.getPowerValue());
 		d.put("proximity",ibeacon.getProximity());
 		d.put("uuid",ibeacon.getUuidHexString());
-		d.put("uuid-dashed",ibeacon.getUuidHexStringDashed());
+		d.put("uuidDashed",ibeacon.getUuidHexStringDashed());
 		event.put("device", d);
 	    
 	      // Success-Callback
@@ -242,7 +242,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	    d.put("power",beacon.getPowerValue());
  	    d.put("proximity",beacon.getProximity());
  	    d.put("uuid",beacon.getUuidHexString());
- 	    d.put("uuid-dashed",beacon.getUuidHexStringDashed());
+ 	    d.put("uuidDashed",beacon.getUuidHexStringDashed());
 	    dList[i]=d;
 	  }
 	  event.put("devices", dList);
