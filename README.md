@@ -29,6 +29,18 @@ if (iBeacon.isEnabled()){
 }
 ```
 
+#Methods:
+
+### initBeacon
+Parameters
+* success: callback function
+* error: callback function
+* region: callback function
+* found: callback function
+* interval: integer
+
+### isEnabled
+
 
 #Binary:
 
