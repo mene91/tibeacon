@@ -119,7 +119,9 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 		event.put("device", d);
 	    
 	      // Success-Callback
-	      found.call(getKrollObject(), event);
+	      if (found!=null){
+		found.call(getKrollObject(), event);
+	      }
 	}
 	
 	@Override
@@ -148,7 +150,9 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 		event.put("device", d);
 	    
 	      // Success-Callback
-	      region.call(getKrollObject(), event);
+	      if (region!=null){
+		region.call(getKrollObject(), event);
+	      }
 		
 	}
 	
@@ -244,7 +248,9 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	  event.put("devices", dList);
 	 
 	  // Success-Callback
-	  success.call(getKrollObject(), event);
+	  if (success!=null){
+	    success.call(getKrollObject(), event);
+	  }
 	}
 	
 }
