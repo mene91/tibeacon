@@ -32,6 +32,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	int seconds=60;
 	public static final int REQUEST_BLUETOOTH_ENABLE = 1;	
 	KrollFunction success;
+	KrollFunction region;
 	KrollFunction error;
 	Timer timer = new Timer();
 	boolean isRunning = false;
@@ -73,6 +74,7 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	public void initBeacon(HashMap args){
 	    KrollDict arg = new KrollDict(args);
 	    success =(KrollFunction) arg.get("success");
+	    region=(KrollFunction) arg.get("region");
 	    error =(KrollFunction) arg.get("error");
 	    seconds=arg.optInt("interval",60);
 	    
@@ -114,6 +116,21 @@ public class TibeaconModule extends KrollModule implements IBeaconListener{
 	@Override
 	public void enterRegion(IBeacon ibeacon) {
 		Log.i("BEACON","Enter region: " + ibeacon.toString());
+
+		HashMap<String, KrollDict> event = new HashMap<String, KrollDict>();
+		KrollDict d = new KrollDict();;
+		d.put("mac",ibeacon.getMacAddress());
+		d.put("major",ibeacon.getMajor());
+		d.put("minor",ibeacon.getMinor());
+		d.put("rssi",ibeacon.getRssiValue());
+		d.put("power",ibeacon.getPowerValue());
+		d.put("proximity",ibeacon.getProximity());
+		d.put("uuid",ibeacon.getUuidHexString());
+		event.put("device", d);
+	    
+	      // Success-Callback
+	      region.call(getKrollObject(), event);
+		
 	}
 	
 	@Kroll.method

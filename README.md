@@ -4,10 +4,14 @@
 var iBeacon = require('miga.tibeacon');
 // register success Callback and set interval to 30sec
 iBeacon.initBeacon({
-    success : onSuccess, error:onError, interval: 30
+    success : onSuccess, error:onError, interval: 30, region: onRegion
 });
 
 function onSuccess(e){
+  Ti.API.info(JSON.stringify(e));
+}  
+
+function onRegion(e){
   Ti.API.info(JSON.stringify(e));
 }  
 
