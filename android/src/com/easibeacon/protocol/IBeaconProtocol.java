@@ -1,6 +1,6 @@
 /*
  * Copyright 2014 Easi Technologies and Consulting Services, S.L.
- *  
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -35,84 +35,84 @@ import android.util.Log;
 
 /**
  * Basic iBeacon discovery protocol
- * 
+ *
  * @author inakivazquez
  *
  */
 public class IBeaconProtocol {
 	/**
 	 * Scanning period for iBeacon discovery in miliseconds
-	 */		
+	 */
 	public static int SCANNING_PERIOD = 10000;
 
 	/**
 	 * The prefix for identifying easiBeacons
-	 */	
+	 */
 	public static final String EASIBEACON_IDPREFIX = "easiBeacon_";
-	
+
 	/**
 	 * Length in bytes of iBeacon UUID
-	 */	
+	 */
 	public static final int UUID_LEN = 16;
-	
+
 	/**
 	 * State of the search process to notify the listener: started
-	 */	
+	 */
 	public static final int SEARCH_STARTED = 1;
 
 	/**
 	 * State of the search process to notify the listener: no iBeacons found
-	 */	
+	 */
 	public static final int SEARCH_END_EMPTY = 2;
-	
+
 	/**
 	 * State of the search process to notify the listener: at least one iBeacon found
-	 */		
+	 */
 	public static final int SEARCH_END_SUCCESS = 3;
-	
+
 	/**
 	 * Singleton attribute for the instance of this class
-	 */	
+	 */
 	private static IBeaconProtocol _ibp = null;
-	
+
 	/**
 	 * Reference to the BluetoothAdapter
-	 */	
+	 */
 	private BluetoothAdapter _bluetoothAdapter;
 
 	/**
 	 * Reference to a listener to send iBeacon events
-	 */	
+	 */
 	private IBeaconListener _listener;
 
 	/**
 	 * UUID to filter advertisements, default value
-	 */	
+	 */
 	private byte[] _uuid = null;
 
 	/**
 	 * <code>true</code> if currently in a scanning process
-	 */	
+	 */
 	private boolean _scanning;
 
 	/**
 	 * Reference to the previous nearest iBeacon, to identify if region has changed
-	 */	
+	 */
 	private IBeacon _previousNearestIBeacon = null;
 
 	/**
 	 * Ordered array of iBeacons found
-	 */	
+	 */
 	private ArrayList<IBeacon> _arrOrderedIBeacons = new ArrayList<IBeacon>();
-	
+
 	/**
 	 * Private empty constructor
 	 */
 	private IBeaconProtocol(){};
-	
+
 	/**
 	 * Obtains the reference to the singleton <code>IBeaconProtocol</code>
-	 * 
+	 *
 	 * @param c Context of the Android app
 	 * @return The singleton instance
 	 */
@@ -124,10 +124,10 @@ public class IBeaconProtocol {
 		}
 		return _ibp;
 	}
-	
+
 	/**
 	 * Returns the listener configured previously if any
-	 * 
+	 *
 	 * @return the listener
 	 */
 	public IBeaconListener getListener() {
@@ -141,16 +141,16 @@ public class IBeaconProtocol {
 	public void setListener(IBeaconListener l) {
 		this._listener = l;
 	}
-	
+
 	/**
 	 * Obtains the list of  discovered iBeacons ordered by estimated proximity
-	 * 
+	 *
 	 * @return the {@link java.util.ArrayList} of iBeacons
 	 */
 	public ArrayList<IBeacon> getIBeaconsByProximity(){
 		return _arrOrderedIBeacons;
 	}
-	
+
 	/**
 	 * Removes information about previous nearest beacon in order to "forget" the current region and detect it again.
 	 * Used mainly for administration purposes.
@@ -158,20 +158,20 @@ public class IBeaconProtocol {
 	public void reset(){
 		_previousNearestIBeacon = null;
 	}
-	
-	
+
+
 	/**
 	 * Informs if the system is currently scanning for iBeacons
-	 * 
+	 *
 	 * @return <code>true</code> if currently scanning iBeacons. <code>false</code> otherwise.
 	 */
 	public boolean isScanning(){
 		return _scanning;
 	}
-	
+
 	/**
 	 * Initializes the Bluetooth adapter and stores a reference to it
-	 * 
+	 *
 	 * @param c the current context
 	 * @return <code>true</code> if initialization was successful. <code>false</code> otherwise.
 	 */
@@ -181,10 +181,10 @@ public class IBeaconProtocol {
 		_ibp._bluetoothAdapter = bluetoothManager.getAdapter();
 		if (_ibp._bluetoothAdapter == null || !_ibp._bluetoothAdapter.isEnabled()) {
 		    return false;
-		}		
+		}
 		return true;
 	}
-	
+
 	/**
 	 * Callback for processing BLE events, to identify iBeacons during the scanning process.
 	 */
@@ -192,37 +192,37 @@ public class IBeaconProtocol {
 	    @Override
 	    public void onLeScan(final BluetoothDevice device, int rssi,
 	            byte[] scanRecord) {
-	    	
-	    	
-	    	
+
+
+
 	    	IBeacon newBeacon = parseAdvertisementData(scanRecord);
 	    	// If it is not a iBeacon, return
 	    	if(newBeacon == null)
 	    		return;
-	    	
+
 	    	newBeacon.setMacAddress(device.getAddress());
 	    	newBeacon.setRssiValue(rssi);
-	    	
+
 	    	if(device.getName()!=null && device.getName().startsWith(EASIBEACON_IDPREFIX))
 	    		newBeacon.setType(1);
-	    	
+
 	    	// Review this
 	    	Log.i(Utils.LOG_TAG,device.getName() + " " + device.getAddress() + " " + newBeacon.getPowerValue() + " " + rssi);
-	    	
-	    	newBeacon.setProximity((int)calculateDistance(newBeacon.getPowerValue(), rssi));
-	    	
+
+	    	newBeacon.setProximity(calculateDistance(newBeacon.getPowerValue(), rssi));
+
 	    	// Add to array if not there
 	    	if(!_arrOrderedIBeacons.contains(newBeacon)){
 		    	_arrOrderedIBeacons.add(newBeacon);
 		    	Collections.sort(_arrOrderedIBeacons, new IBeaconProximityComparator());
-		    	
+
 		    	// Notify listener a new iBeacon was found
 		    	_listener.beaconFound(newBeacon);
-	    	} 	
-	   }       
+	    	}
+	   }
 	};
-	
-	
+
+
 	/**
 	 * Notifies the listener about possible region-based events
 	 */
@@ -230,7 +230,7 @@ public class IBeaconProtocol {
 		IBeacon newNearestBeacon = null;
 		if(_arrOrderedIBeacons.size() > 0)
 			newNearestBeacon = _arrOrderedIBeacons.get(0);
-		
+
     	// Case 1: enter iBeacon region from nowhere
     	if(_previousNearestIBeacon == null && newNearestBeacon != null){
     		_listener.enterRegion(newNearestBeacon);
@@ -250,9 +250,9 @@ public class IBeaconProtocol {
     	else if(_previousNearestIBeacon != null && newNearestBeacon == null){
     		_listener.exitRegion(_previousNearestIBeacon);
     		_previousNearestIBeacon = null;
-    	}	    	
+    	}
 	}
-	
+
 	/**
 	 * Obtains a reference to the {@link android.bluetooth.BluetoothDevice} based on the MAC
 	 * @param mac the Bluetooth MAC address of the device
@@ -261,11 +261,11 @@ public class IBeaconProtocol {
 	public BluetoothDevice getDevice(String mac){
 		return _bluetoothAdapter.getRemoteDevice(mac);
 	}
-	
+
 	public void setScanUUID(byte[] uuid){
 		_uuid = uuid;
 	}
-	
+
 	/**
 	 * Starts or stops the scanning process looking for iBeacons
 	 * @param enable <code>true</code> to start scanning, <code>false</code> to stop the scanning process
@@ -305,13 +305,13 @@ public class IBeaconProtocol {
 	private IBeacon parseAdvertisementData(byte[] data){
 		// First, check the prefix for easiBeacons
 		int startByte = 2;
-		
-		
-		while (startByte <= 5) {		  
+
+
+		while (startByte <= 5) {
 		  if (((int)data[startByte+2] & 0xff) == 0x02 && ((int)data[startByte+3] & 0xff) == 0x15) {
 			  byte[] uuid = new byte[16];
 			  System.arraycopy(data, startByte+4, uuid, 0, 16);
-			  
+
 			  // Now filter our beacons UUID if any
 			  if(_uuid == null || Arrays.equals(_uuid, uuid)){
 				  IBeacon ibeacon = new IBeacon();
@@ -319,7 +319,7 @@ public class IBeaconProtocol {
 				  ibeacon.setMajor((data[startByte+20] & 0xff) * 0x100 + (data[startByte+21] & 0xff));
 				  ibeacon.setMinor((data[startByte+22] & 0xff) * 0x100 + (data[startByte+23] & 0xff));
 				  ibeacon.setPowerValue((int)data[startByte+24]);
-				  
+
 				  return ibeacon;
 			  }
 			  break;
@@ -327,7 +327,7 @@ public class IBeaconProtocol {
 			  // L8 smartlight
 			  byte[] uuid = new byte[16];
 			  System.arraycopy(data, startByte+4, uuid, 0, 16);
-			  
+
 			  // Now filter our beacons UUID if any
 			  if(_uuid == null || Arrays.equals(_uuid, uuid)){
 				  IBeacon ibeacon = new IBeacon();
@@ -344,12 +344,12 @@ public class IBeaconProtocol {
 		}
 		return null;
 	}
-	
-	
+
+
 	/**
 	 * Roughly estimates the distance to the iBeacon
 	 * Calculation obtained from http://stackoverflow.com/questions/20416218/understanding-ibeacon-distancing
-	 *  
+	 *
 	 * @param txPower RSSI of the iBeacon at 1 meter
 	 * @param rssi measured RSSI by the user device
 	 * @return
@@ -364,13 +364,13 @@ public class IBeaconProtocol {
 			return Math.pow(ratio,10);
 		}
 		else {
-			double accuracy =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;    
+			double accuracy =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;
 			return accuracy;
 		}
-	} 
-	
-	
-	
+	}
+
+
+
 	/**
 	 * Implements a proximity comparator of distance for iBeacons
 	 * @author inakivazquez
@@ -382,6 +382,6 @@ public class IBeaconProtocol {
 	        return (int)(b1.getProximity()-b2.getProximity());
 	    }
 	}
-	
+
 
 }
