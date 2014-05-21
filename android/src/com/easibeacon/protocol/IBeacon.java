@@ -51,9 +51,12 @@ public class IBeacon implements Serializable{
 	private int _minor;
 
 	/**
-	 * <code>true</code> if the iBeacon is an easiBeacon
+	 * Type of the iBeacon
+	 * 1 = plain beacon
+	 * 2 = easiBeacon
+	 * 3 = L8 smartlight
 	 */
-	private boolean _easiBeacon = false;
+	private int _type = 0;
 
 	/**
 	 * RSSI at 1 meter reported by the iBeacon
@@ -163,12 +166,12 @@ public class IBeacon implements Serializable{
 		this._minor = _minor;
 	}
 	
-	public boolean isEasiBeacon() {
-		return _easiBeacon;
+	public int getType() {
+		return _type;
 	}
 
-	public void setEasiBeacon(boolean _easiBeacon) {
-		this._easiBeacon = _easiBeacon;
+	public void setType(int _type) {
+		this._type = _type;
 	}
 
 	public int getPowerValue() {

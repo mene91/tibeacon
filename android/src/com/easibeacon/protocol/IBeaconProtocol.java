@@ -41,12 +41,6 @@ import android.util.Log;
  */
 public class IBeaconProtocol {
 	/**
-	 * The BLE advertisement prefix for identifying iBeacons
-	 */
-	public static final byte[] ADV_PREFIX = {0x02, 0x01, 0x06, 0x1A, (byte) 0xFF, 0x4C, 0x00, 0x02, 0x15};
-	public static final byte[] ADV_PREFIX2 = {0x02, 0x01, 0x1A, 0x1A, (byte) 0xFF, 0x4C, 0x00, 0x02, 0x15};
-
-	/**
 	 * Scanning period for iBeacon discovery in miliseconds
 	 */		
 	public static int SCANNING_PERIOD = 10000;
@@ -210,13 +204,11 @@ public class IBeaconProtocol {
 	    	newBeacon.setRssiValue(rssi);
 	    	
 	    	if(device.getName()!=null && device.getName().startsWith(EASIBEACON_IDPREFIX))
-	    		newBeacon.setEasiBeacon(true);
-	    	else
-	    		newBeacon.setEasiBeacon(false);
+	    		newBeacon.setType(1);
 	    	
 	    	// Review this
 	    	Log.i(Utils.LOG_TAG,device.getName() + " " + device.getAddress() + " " + newBeacon.getPowerValue() + " " + rssi);
-	    	//if(newBeacon.isEasiBeacon())
+	    	
 	    	newBeacon.setProximity((int)calculateDistance(newBeacon.getPowerValue(), rssi));
 	    	
 	    	// Add to array if not there
@@ -327,11 +319,28 @@ public class IBeaconProtocol {
 				  ibeacon.setMajor((data[startByte+20] & 0xff) * 0x100 + (data[startByte+21] & 0xff));
 				  ibeacon.setMinor((data[startByte+22] & 0xff) * 0x100 + (data[startByte+23] & 0xff));
 				  ibeacon.setPowerValue((int)data[startByte+24]);
+				  
+				  return ibeacon;
+			  }
+			  break;
+		  } else if (((int)data[startByte+2] & 0xff) == 0x01 && ((int)data[startByte+3] & 0xff) == 0x15) {
+			  // L8 smartlight
+			  byte[] uuid = new byte[16];
+			  System.arraycopy(data, startByte+4, uuid, 0, 16);
+			  
+			  // Now filter our beacons UUID if any
+			  if(_uuid == null || Arrays.equals(_uuid, uuid)){
+				  IBeacon ibeacon = new IBeacon();
+				  ibeacon.setUuid(uuid);
+				  ibeacon.setMajor((data[startByte+20] & 0xff) * 0x100 + (data[startByte+21] & 0xff));
+				  ibeacon.setMinor((data[startByte+22] & 0xff) * 0x100 + (data[startByte+23] & 0xff));
+				  ibeacon.setPowerValue((int)data[startByte+24]);
+				  ibeacon.setType(2);
 				  return ibeacon;
 			  }
 			  break;
 		  }
-		  startByte++;
+ 		  startByte++;
 		}
 		return null;
 	}

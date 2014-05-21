@@ -39,6 +39,18 @@ Parameters
 * found: callback function
 * interval: integer
 
+### callback
+succes(event). event conatins an array devices (success) or one device (region, found) with:
+* mac
+* major
+* minor
+* rssi
+* power
+* proximity
+* uuid
+* uuidDashed
+* type (will be used to identify different beacons e.g. L8 smartlight)
+
 ### isEnabled
 
 
