@@ -1,3 +1,8 @@
+###please have a look at https://github.com/jamesfalkner/liferay-android-beacons
+it is more advanced and has more features!
+
+___
+
 #Usage:
 
 ```
